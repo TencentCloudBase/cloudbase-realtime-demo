@@ -16,9 +16,13 @@ import InputAdornment from '@material-ui/core/InputAdornment';
 import Grid from '@material-ui/core/Grid'
 import ListItemAvatar from '@material-ui/core/ListItemAvatar'
 import Typography from '@material-ui/core/Typography';
+import Avatar from '@material-ui/core/Avatar';
 
 import SendIcon from '@material-ui/icons/Send';
 import AccountCircle from '@material-ui/icons/AccountCircle';
+
+import MessageList from './components/MessageList'
+import Loading from './components/Loading'
 
 const app = cloudbase.init({
   env: 'starkwang-e850e3'
@@ -29,6 +33,9 @@ const useStyles = makeStyles(theme => ({
     padding: '2px 4px',
     display: 'flex',
     alignItems: 'center',
+    position: 'fixed',
+    bottom: 0,
+    width: '100%'
   },
   input: {
     margin: theme.spacing(1),
@@ -43,82 +50,63 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
-
 function App() {
   const classes = useStyles();
-  const [list, setList] = useState([{
-    text: 'loading....'
-  }])
+  const [list, setList] = useState([])
   const [text, setText] = useState('')
   const [uid, setUid] = useState(null)
+  const [loading, setLoading] = useState(true)
   useEffect(() => {
     console.log('link to cloudbase')
     async function init() {
-      const { data: { ticket, uid } } = await axios.get('http://service-m1w79cyz-1257776809.ap-shanghai.apigateway.myqcloud.com/release/')
-      console.log(ticket)
-      await app.auth().signInWithTicket(ticket)
+      if (!(await app.auth().getLoginState())) {
+        const { data: { ticket } } = await axios.get('http://service-m1w79cyz-1257776809.ap-shanghai.apigateway.myqcloud.com/release/')
+        await app.auth({ persistence: 'local' }).signInWithTicket(ticket)
+      }
 
-      setUid(uid)
+      const { credential: { refreshToken } } = await app.auth().getLoginState()
+      setUid(refreshToken.slice(0, 5))
+      console.log(refreshToken)
+
       const db = app.database()
       await db.collection('test').where({}).watch({
         onChange(snapshot) {
           console.log('snapshot', snapshot)
           setList(snapshot.docs)
+          setLoading(false)
         },
         onError: console.log
       })
-
-      await db.startTransaction()
+      // await db.startTransaction()
     }
     init()
   }, []);
 
   async function sendMessage() {
     const db = app.database()
-    await db.collection('test').add({
+    const message = {
       timestamp: new Date().getTime(),
       text,
       uid
-    })
+    }
+    await db.collection('test').add(message)
     setText('')
+    setList([...list, message])
+    window.scroll(0, 99999)
   }
   return (
     <div className="App" style={{
       width: '100%'
     }}>
-      <List>
-        {
-          list.map(item => {
-            return (
-              <ListItem>
-                <ListItemAvatar>
-                  <AccountCircle />
-                </ListItemAvatar>
-                <ListItemText
-                  primary={item.text}
-                  secondary={
-                    <React.Fragment>
-                      {item.uid || '匿名用户'}
-                      {item.timestamp ? new Date(item.timestamp).toUTCString() : ''}
-                    </React.Fragment>
-                  }
-                />
-              </ListItem>
-            )
-          })
-        }
-      </List>
+      <Loading show={loading}/>
+      <MessageList list={list}/>
       <Paper className={classes.root}>
-        <AccountCircle />
+        {
+          uid ? <Avatar>{uid.slice(0, 2)}</Avatar> : <AccountCircle />
+        }
         <InputBase
           className={classes.input}
           placeholder="说点什么吧^_^"
-          inputProps={{
-            'aria-label': '说点什么吧^_^'
-          }}
           value={text}
           onChange={(event) => setText(event.target.value)}
         />
