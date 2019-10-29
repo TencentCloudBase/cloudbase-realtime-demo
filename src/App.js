@@ -4,18 +4,10 @@ import * as cloudbase from 'tcb-js-sdk'
 import axios from 'axios'
 
 import { makeStyles } from '@material-ui/core/styles'
-import Button from '@material-ui/core/Button';
-import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemText from '@material-ui/core/ListItemText';
 import InputBase from '@material-ui/core/InputBase'
 import Paper from '@material-ui/core/Paper';
 import IconButton from '@material-ui/core/IconButton';
 import Divider from '@material-ui/core/Divider'
-import InputAdornment from '@material-ui/core/InputAdornment';
-import Grid from '@material-ui/core/Grid'
-import ListItemAvatar from '@material-ui/core/ListItemAvatar'
-import Typography from '@material-ui/core/Typography';
 import Avatar from '@material-ui/core/Avatar';
 
 import SendIcon from '@material-ui/icons/Send';
@@ -24,8 +16,16 @@ import AccountCircle from '@material-ui/icons/AccountCircle';
 import MessageList from './components/MessageList'
 import Loading from './components/Loading'
 
-const app = cloudbase.init({
-  env: 'starkwang-e850e3'
+import { CloudbaseHooks } from '@cloudbase/react-hooks'
+
+const hooks = new CloudbaseHooks({
+  env: 'starkwang-e850e3',
+  loginType: 'custom',
+  persistence: 'local',
+  async ticketCallback() {
+    const { data: { ticket } } = await axios.get('http://service-m1w79cyz-1257776809.ap-shanghai.apigateway.myqcloud.com/release/')
+    return ticket
+  }
 })
 
 const useStyles = makeStyles(theme => ({
@@ -52,54 +52,34 @@ const useStyles = makeStyles(theme => ({
 
 function App() {
   const classes = useStyles();
-  const [list, setList] = useState([])
   const [text, setText] = useState('')
-  const [uid, setUid] = useState(null)
-  const [loading, setLoading] = useState(true)
-  useEffect(() => {
-    console.log('link to cloudbase')
-    async function init() {
-      if (!(await app.auth().getLoginState())) {
-        const { data: { ticket } } = await axios.get('http://service-m1w79cyz-1257776809.ap-shanghai.apigateway.myqcloud.com/release/')
-        await app.auth({ persistence: 'local' }).signInWithTicket(ticket)
-      }
+  const { credential } = hooks.useLoginState()
+  const { snapshot, connecting } = hooks.useDatabaseWatch('messages')
 
-      const { credential: { refreshToken } } = await app.auth().getLoginState()
-      setUid(refreshToken.slice(0, 5))
-      console.log(refreshToken)
-
-      const db = app.database()
-      await db.collection('test').where({}).watch({
-        onChange(snapshot) {
-          console.log('snapshot', snapshot)
-          setList(snapshot.docs)
-          setLoading(false)
-        },
-        onError: console.log
-      })
-      // await db.startTransaction()
-    }
-    init()
-  }, []);
+  const uid = credential ? credential.refreshToken.slice(0, 6) : null
+  const list = snapshot ? snapshot.docs : []
 
   async function sendMessage() {
+    const app = cloudbase.init({
+      env: 'starkwang-e850e3'
+    })
+    app.auth()
     const db = app.database()
     const message = {
       timestamp: new Date().getTime(),
       text,
       uid
     }
-    await db.collection('test').add(message)
+    await db.collection('messages').add(message)
     setText('')
-    setList([...list, message])
     window.scroll(0, 99999)
   }
   return (
     <div className="App" style={{
       width: '100%'
     }}>
-      <Loading show={loading}/>
-      <MessageList list={list}/>
+      <Loading show={connecting} />
+      <MessageList list={list} />
       <Paper className={classes.root}>
         {
           uid ? <Avatar>{uid.slice(0, 2)}</Avatar> : <AccountCircle />
