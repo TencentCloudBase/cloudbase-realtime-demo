@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import * as cloudbase from 'tcb-js-sdk'
 import axios from 'axios'
 
 import { makeStyles } from '@material-ui/core/styles'
@@ -16,13 +15,19 @@ import AccountCircle from '@material-ui/icons/AccountCircle';
 import MessageList from './components/MessageList'
 import Loading from './components/Loading'
 
-import { CloudbaseHooks } from '@cloudbase/react-hooks'
+import { createCloudbaseHooks } from '@cloudbase/react-hooks'
 
-const hooks = new CloudbaseHooks({
+const {
+  useCloudFile,
+  useDatabase,
+  useDatabaseWatch,
+  useLoginState,
+  useUpload,
+  useCloudbase
+} = createCloudbaseHooks({
   env: 'starkwang-e850e3',
   loginType: 'custom',
-  persistence: 'local',
-  async ticketCallback() {
+  async fetchTicket() {
     const { data: { ticket } } = await axios.get('http://service-m1w79cyz-1257776809.ap-shanghai.apigateway.myqcloud.com/release/')
     return ticket
   }
@@ -53,18 +58,16 @@ const useStyles = makeStyles(theme => ({
 function App() {
   const classes = useStyles();
   const [text, setText] = useState('')
-  const { credential } = hooks.useLoginState()
-  const { snapshot, connecting } = hooks.useDatabaseWatch('messages')
+  const { credential } = useLoginState()
+  const { snapshot, connecting } = useDatabaseWatch('messages')
+  const db = useDatabase()
+  const { progressEvent, result, upload } = useUpload()
+  const { url } = useCloudFile('cloud://starkwang-e850e3.7374-starkwang-e850e3-1257776809/web-upload')
 
   const uid = credential ? credential.refreshToken.slice(0, 6) : null
   const list = snapshot ? snapshot.docs : []
 
   async function sendMessage() {
-    const app = cloudbase.init({
-      env: 'starkwang-e850e3'
-    })
-    app.auth()
-    const db = app.database()
     const message = {
       timestamp: new Date().getTime(),
       text,
@@ -73,6 +76,10 @@ function App() {
     await db.collection('messages').add(message)
     setText('')
     window.scroll(0, 99999)
+  }
+  async function onFileChange(e) {
+    const file = e.target.files[0]
+    await upload('web-upload', file)
   }
   return (
     <div className="App" style={{
@@ -98,5 +105,4 @@ function App() {
     </div>
   );
 }
-
 export default App;
