@@ -1,0 +1,17 @@
+{
+  "name": "nuxt-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ant-design-vue": "^1.4.4",
+    "koa": "^2.11.0",
+    "nuxt": "^2.10.2",
+    "serverless-http": "^2.3.0"
+  }
+}
