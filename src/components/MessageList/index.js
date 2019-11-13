@@ -5,39 +5,47 @@ import ListItemText from '@material-ui/core/ListItemText';
 import ListItemAvatar from '@material-ui/core/ListItemAvatar'
 import Avatar from '@material-ui/core/Avatar';
 import moment from 'moment'
-import { lighten, makeStyles, withStyles } from '@material-ui/core/styles';
+import { makeStyles } from '@material-ui/core/styles';
 import CircularProgress from '@material-ui/core/CircularProgress';
 
-import { useCloudFile } from '../../hooks'
+import Loading from '../Loading'
+import { useCloudFile, useDatabaseWatch } from '../../hooks'
 
-export default ({ list }) => {
-  return (
-    <div style={{
-      height: '100%',
-      paddingBottom: '52px',
-      boxSizing: 'border-box'
-    }}>
-      <List>
-        {
-          list.map((item, index) => {
-            return (
-              <Item key={index} item={item} />
-            )
-          })
-        }
-      </List>
-    </div>
-  )
+export default () => {
+  const { snapshot, connecting } = useDatabaseWatch('messages')
+  const list = snapshot ? snapshot.docs : []
+
+  if (connecting) {
+    return <Loading />
+  } else {
+    return (
+      <div style={{
+        height: '100%',
+        paddingBottom: '52px',
+        boxSizing: 'border-box'
+      }}>
+        <List>
+          {
+            list.map((item, index) => {
+              return (
+                <Item key={index} item={item} />
+              )
+            })
+          }
+        </List>
+      </div>
+    )
+  }
+
 }
 
 const Item = ({ item }) => {
-  const { url } = useCloudFile(item.image)
   return <ListItem>
     <ListItemAvatar>
       <Avatar>{item.uid.slice(0, 2)}</Avatar>
     </ListItemAvatar>
     <ListItemText
-      primary={item.text || <Img url={url} />}
+      primary={item.text || <Img fileid={item.image} />}
       secondary={
         <React.Fragment>
           {moment(item.timestamp).format('MM/DD HH:mm:ss')}
@@ -55,7 +63,8 @@ const useStylesFacebook = makeStyles({
   },
 });
 
-const Img = ({ url }) => {
+const Img = ({ fileid }) => {
+  const { url } = useCloudFile(fileid)
   const [loaded, setLoaded] = useState(false)
   const classes = useStylesFacebook();
   if (url) {

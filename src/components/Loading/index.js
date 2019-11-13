@@ -1,6 +1,6 @@
 import React from 'react'
 import CircularProgress from '@material-ui/core/CircularProgress';
-export default ({ show }) => {
+export default () => {
     return (
         <CircularProgress style={{
             position: "absolute",
@@ -8,7 +8,6 @@ export default ({ show }) => {
             left: "50%",
             marginLeft: "-20px",
             marginTop: "-20px",
-            display: show ? 'auto' : 'none'
         }} />
     )
 }
