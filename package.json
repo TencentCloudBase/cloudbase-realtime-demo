@@ -21,6 +21,7 @@
   "eslintConfig": {
     "extends": "react-app"
   },
+  "homepage": "https://7374-starkwang-e850e3-1257776809.tcb.qcloud.la/realtime",
   "browserslist": {
     "production": [
       ">0.2%",
