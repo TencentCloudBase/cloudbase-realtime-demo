@@ -34,7 +34,13 @@ const useStyles = makeStyles((theme) => ({
 export default ({ uid, text, setText, sendMessage }) => {
     const classes = useStyles();
     return <Paper className={classes.root}>
-        {uid ? <Avatar>{uid.slice(0, 2)}</Avatar> : <AccountCircle />}
+        {
+            uid ?
+            <Avatar className='inputbox-avatar'>
+                {uid.slice(0, 2)}
+            </Avatar> :
+            <AccountCircle className='inputbox-avatar'/>
+        }
         <InputBase
             className={classes.input}
             placeholder={uid ? "说点什么吧^_^" : "登录中……"}

@@ -38,7 +38,7 @@ function App() {
         .where({})
         .watch({
           onChange(snapshot) {
-            setList(snapshot.docs);
+            setList(snapshot.docs.reverse());
             setLoading(false);
           },
           onError(err) {
@@ -53,14 +53,12 @@ function App() {
   async function sendMessage() {
     const message = {
       timestamp: new Date().getTime(),
-      text,
-      uid,
+      text
     };
     await db.collection("messages").add(message);
     // 清空输入栏
     setText("");
   }
-
   return (
     <div className="App">
       <Loading show={loading} />

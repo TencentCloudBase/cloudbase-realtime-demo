@@ -11,3 +11,9 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
 }
+
+.inputbox-avatar {
+  width: 40px !important;
+  height: 40px !important;
+  margin-left: 10px;
+}

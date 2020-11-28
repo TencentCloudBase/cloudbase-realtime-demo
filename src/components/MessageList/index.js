@@ -20,7 +20,11 @@ export default ({ list }) => {
           return (
             <ListItem key={index}>
               <ListItemAvatar>
-                <Avatar>{item.uid ? item.uid.slice(0, 2) : "?"}</Avatar>
+                {
+                  item.avatarUrl ?
+                    <Avatar src={item.avatarUrl} /> :
+                    <Avatar>{item._openid.slice(0, 2)}</Avatar>
+                }
               </ListItemAvatar>
               <ListItemText
                 primary={item.text}
